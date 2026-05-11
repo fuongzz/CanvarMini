@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+:root {
+  --background: #111827;
+  --foreground: #f3f4f6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+/* Thin scrollbars for panel areas */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
