@@ -1,18 +1,42 @@
+"use client";
+
+import { useState } from "react";
+
+const LANGS = [
+  { code: "vn", label: "VN" },
+  { code: "jp", label: "JP" },
+  { code: "en", label: "EN" },
+];
+
 interface AuthLayoutProps {
   children: React.ReactNode;
-};
+}
 
-const AuthLayout = ({ children }: AuthLayoutProps) => {
-  return ( 
-    <div className="bg-[url(/bg.jpg)] bg-top bg-cover h-full flex flex-col">
-      <div className="z-[4] h-full w-full flex flex-col items-center justify-center">
-        <div className="h-full w-full md:h-auto md:w-[420px]">
-          {children}
-        </div>
+export default function AuthLayout({ children }: AuthLayoutProps) {
+  const [lang, setLang] = useState("en");
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center px-4">
+      {/* Language switcher */}
+      <div className="fixed top-4 right-4 flex items-center gap-1 bg-white rounded-full px-2 py-1 shadow-sm border border-gray-200">
+        {LANGS.map((l) => (
+          <button
+            key={l.code}
+            onClick={() => setLang(l.code)}
+            className={`text-xs font-semibold px-3 py-1 rounded-full transition-colors ${
+              lang === l.code
+                ? "bg-indigo-600 text-white"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            {l.label}
+          </button>
+        ))}
       </div>
-      <div className="fixed inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.8),rgba(0,0,0,.4),rgba(0,0,0,.8))] z-[1]" />
+
+      <div className="w-full max-w-md">
+        {children}
+      </div>
     </div>
   );
-};
- 
-export default AuthLayout;
+}

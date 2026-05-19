@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { Hono } from "hono";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
 
 import { db } from "@/db/drizzle";
-import { users } from "@/db/schema";
+import { users, verificationTokens } from "@/db/schema";
 
 const app = new Hono()
   .post(
@@ -16,10 +16,11 @@ const app = new Hono()
         name: z.string(),
         email: z.string().email(),
         password: z.string().min(3).max(20),
+        language: z.string().optional(),
       })
     ),
     async (c) => {
-      const { name, email, password } = c.req.valid("json");
+      const { name, email, password, language } = c.req.valid("json");
 
       const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -36,9 +37,58 @@ const app = new Hono()
         email,
         name,
         password: hashedPassword,
+        language: language ?? "en",
       });
       
       return c.json(null, 200);
+    },
+  )
+  .post(
+    "/forgot-password",
+    zValidator("json", z.object({ email: z.string().email() })),
+    async (c) => {
+      const { email } = c.req.valid("json");
+
+      const query = await db.select().from(users).where(eq(users.email, email));
+      if (!query[0]) {
+        // Don't reveal if email exists
+        return c.json({ ok: true }, 200);
+      }
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
+
+      await db.delete(verificationTokens).where(eq(verificationTokens.identifier, email));
+      await db.insert(verificationTokens).values({ identifier: email, token: otp, expires });
+
+      // Dev: in OTP ra terminal
+      console.log(`[OTP] ${email} → ${otp}`);
+
+      return c.json({ ok: true }, 200);
+    },
+  )
+  .post(
+    "/reset-password",
+    zValidator("json", z.object({
+      email: z.string().email(),
+      otp: z.string().length(6),
+      newPassword: z.string().min(3).max(20),
+    })),
+    async (c) => {
+      const { email, otp, newPassword } = c.req.valid("json");
+
+      const record = await db.select().from(verificationTokens).where(
+        and(eq(verificationTokens.identifier, email), eq(verificationTokens.token, otp))
+      );
+
+      if (!record[0]) return c.json({ error: "Mã OTP không hợp lệ" }, 400);
+      if (record[0].expires < new Date()) return c.json({ error: "Mã OTP đã hết hạn" }, 400);
+
+      const hashed = await bcrypt.hash(newPassword, 12);
+      await db.update(users).set({ password: hashed }).where(eq(users.email, email));
+      await db.delete(verificationTokens).where(eq(verificationTokens.identifier, email));
+
+      return c.json({ ok: true }, 200);
     },
   );
 

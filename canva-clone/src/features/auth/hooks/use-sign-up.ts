@@ -1,31 +1,34 @@
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
-import { InferRequestType, InferResponseType } from "hono";
 
-import { client } from "@/lib/hono";
-
-type ResponseType = InferResponseType<typeof client.api.users["$post"]>;
-type RequestType = InferRequestType<typeof client.api.users["$post"]>["json"];
+interface SignUpRequest {
+  name: string;
+  email: string;
+  password: string;
+  language?: string;
+}
 
 export const useSignUp = () => {
-  const mutation = useMutation<
-    ResponseType,
-    Error,
-    RequestType
-  >({
+  return useMutation<unknown, Error, SignUpRequest>({
     mutationFn: async (json) => {
-      const response = await client.api.users.$post({ json });
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(json),
+      });
 
       if (!response.ok) {
-        throw new Error("Something went wrong");
+        const data = await response.json() as { error?: string };
+        throw new Error(data.error ?? "Something went wrong");
       }
 
-      return await response.json();
+      return response.json();
     },
     onSuccess: () => {
-      toast.success("User created");
-    }
+      toast.success("Account created!");
+    },
+    onError: (err) => {
+      toast.error(err.message);
+    },
   });
-
-  return mutation;
 };
