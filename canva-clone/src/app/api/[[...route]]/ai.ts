@@ -55,7 +55,14 @@ Use clearFirst: false when user says "add", "change", "update", "thêm", "đổi
 
 IMPORTANT: Always carefully calculate top positions to avoid overlap.`;
 
-const GEMINI_MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro-latest", "gemini-1.5-pro"];
+const GEMINI_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-8b",
+  "gemini-1.5-pro",
+  "gemini-1.5-pro-latest",
+];
 
 const RESPONSE_SCHEMA = {
   type: "object",
@@ -99,23 +106,34 @@ async function callGeminiChat(userMessage: string): Promise<AIChatResponse> {
     },
   };
 
+  // Try each model, retry once with 12s delay on 429
   for (const model of GEMINI_MODELS) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
 
-    if (res.status === 404 || res.status === 429) {
-      console.warn(`[Gemini] ${model} returned ${res.status}, trying next...`);
-      continue;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.status === 404) break; // model không tồn tại, thử model khác
+
+      if (res.status === 429) {
+        if (attempt === 0) {
+          console.warn(`[Gemini] ${model} rate limited, retrying in 12s...`);
+          await new Promise((r) => setTimeout(r, 12000));
+          continue;
+        }
+        break; // vẫn 429 sau retry, thử model khác
+      }
+
+      if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
+
+      const data = await res.json() as { candidates: { content: { parts: { text: string }[] } }[] };
+      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+      return JSON.parse(raw) as AIChatResponse;
     }
-    if (!res.ok) throw new Error(`Gemini API error: ${res.status}`);
-
-    const data = await res.json() as { candidates: { content: { parts: { text: string }[] } }[] };
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
-    return JSON.parse(raw) as AIChatResponse;
   }
 
   throw new Error("RATE_LIMIT");
@@ -188,19 +206,38 @@ const app = new Hono()
     async (c) => {
       const { prompt } = c.req.valid("json");
 
-      const input = {
-        prompt: prompt,
-        aspect_ratio: "3:2",
-        output_format: "webp",
-        output_quality: 90,
-        num_outputs: 1,
-      };
+      const seed = Math.floor(Math.random() * 1000000);
+      const encoded = encodeURIComponent(prompt);
 
-      const output = await replicate.run("black-forest-labs/flux-schnell", { input });
+      const urls = [
+        `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${seed}&model=flux`,
+        `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${seed + 1}&model=turbo`,
+      ];
 
-      const res = output as Array<string>;
+      for (const imageUrl of urls) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 25000);
 
-      return c.json({ data: res[0] });
+          const res = await fetch(imageUrl, { signal: controller.signal });
+          clearTimeout(timeout);
+
+          if (!res.ok) continue;
+
+          const contentType = res.headers.get("content-type") || "";
+          if (!contentType.startsWith("image/")) continue;
+
+          const buffer = await res.arrayBuffer();
+          const base64 = Buffer.from(buffer).toString("base64");
+          const dataUrl = `data:${contentType};base64,${base64}`;
+
+          return c.json({ data: dataUrl });
+        } catch {
+          continue;
+        }
+      }
+
+      return c.json({ error: "Failed to generate image, please try again" }, 500);
     },
   );
 

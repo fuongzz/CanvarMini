@@ -6,14 +6,17 @@ import { signIn } from "next-auth/react";
 import { Eye, EyeOff, Loader2, TriangleAlert } from "lucide-react";
 
 import { useSignUp } from "@/features/auth/hooks/use-sign-up";
+import { useLanguage } from "@/contexts/language-context";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
-const LANGUAGES = [
+const LANGUAGE_OPTIONS = [
   { value: "en", label: "English" },
-  { value: "vn", label: "Tiếng Việt" },
+  { value: "vi", label: "Tiếng Việt" },
   { value: "jp", label: "日本語" },
 ];
 
 export const SignUpCard = () => {
+  const { t } = useLanguage();
   const mutation = useSignUp();
 
   const [name, setName] = useState("");
@@ -31,7 +34,7 @@ export const SignUpCard = () => {
     setPasswordError("");
 
     if (password !== confirmPassword) {
-      setPasswordError("Passwords do not match");
+      setPasswordError(t.passwordsNoMatch);
       return;
     }
 
@@ -51,26 +54,26 @@ export const SignUpCard = () => {
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-8 w-full">
-      {/* Logo */}
-      <div className="mb-6">
+      {/* Header: Logo + Language Switcher */}
+      <div className="flex items-center justify-between mb-6">
         <span className="text-2xl font-extrabold text-white bg-indigo-600 px-3 py-1 rounded-lg tracking-tight">
-          Canvar
+          {t.appName}
         </span>
+        <LanguageSwitcher />
       </div>
 
       {!!mutation.error && (
         <div className="bg-red-50 border border-red-200 p-3 rounded-xl flex items-center gap-2 text-sm text-red-600 mb-5">
           <TriangleAlert className="size-4 shrink-0" />
-          <p>Something went wrong. Please try again.</p>
+          <p>{t.somethingWrong}</p>
         </div>
       )}
 
       <form onSubmit={onSubmit} className="space-y-4">
-        {/* Row: Full name + Language */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
-              Full Name
+              {t.fullName}
             </label>
             <input
               type="text"
@@ -83,7 +86,7 @@ export const SignUpCard = () => {
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
-              Preferred Language
+              {t.preferredLanguage}
             </label>
             <select
               value={language}
@@ -91,17 +94,16 @@ export const SignUpCard = () => {
               disabled={isLoading}
               className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent transition disabled:opacity-60"
             >
-              {LANGUAGES.map((l) => (
+              {LANGUAGE_OPTIONS.map((l) => (
                 <option key={l.value} value={l.value}>{l.label}</option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Email */}
         <div>
           <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
-            Email
+            {t.email}
           </label>
           <input
             type="email"
@@ -113,11 +115,10 @@ export const SignUpCard = () => {
           />
         </div>
 
-        {/* Password + Confirm side by side */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
-              Password
+              {t.password}
             </label>
             <div className="relative">
               <input
@@ -138,7 +139,7 @@ export const SignUpCard = () => {
           </div>
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">
-              Confirm Password
+              {t.confirmPassword}
             </label>
             <div className="relative">
               <input
@@ -167,14 +168,14 @@ export const SignUpCard = () => {
           className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold rounded-xl py-3 text-sm transition flex items-center justify-center gap-2"
         >
           {isLoading ? <Loader2 className="size-4 animate-spin" /> : null}
-          Create Account
+          {t.createAccount}
         </button>
       </form>
 
       <p className="text-sm text-center text-gray-500 mt-6">
-        Already a member?{" "}
+        {t.alreadyMember}{" "}
         <Link href="/sign-in" className="text-indigo-600 font-semibold hover:underline">
-          Sign In
+          {t.signIn}
         </Link>
       </p>
     </div>

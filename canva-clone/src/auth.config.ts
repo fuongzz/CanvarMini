@@ -3,8 +3,6 @@ import bcrypt from "bcryptjs";
 import type { NextAuthConfig } from "next-auth";
 import { eq } from "drizzle-orm";
 import { JWT } from "next-auth/jwt";
-import GitHub from "next-auth/providers/github";
-import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 
@@ -28,52 +26,50 @@ declare module "@auth/core/jwt" {
   }
 }
 
+const DEMO_ACCOUNTS = [
+  { email: "demo.a@canvar.com", password: "demo123", name: "Demo Account A" },
+  { email: "demo.b@canvar.com", password: "demo123", name: "Demo Account B" },
+];
+
 export default {
   adapter: DrizzleAdapter(db),
   providers: [
     Credentials({
       credentials: {
         email: { label: "Email", type: "email" },
-        pasword: { label: "Password", type: "password" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         const validatedFields = CredentialsSchema.safeParse(credentials);
-
-        if (!validatedFields.success) {
-          return null;
-        }
+        if (!validatedFields.success) return null;
 
         const { email, password } = validatedFields.data;
 
-        const query = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, email));
+        // Auto-create demo accounts on first login
+        const demo = DEMO_ACCOUNTS.find((d) => d.email === email);
+        if (demo && password === demo.password) {
+          const existing = await db.select().from(users).where(eq(users.email, email));
+          if (!existing[0]) {
+            const hashed = await bcrypt.hash(demo.password, 12);
+            await db.insert(users).values({ email: demo.email, name: demo.name, password: hashed });
+          }
+        }
 
+        const query = await db.select().from(users).where(eq(users.email, email));
         const user = query[0];
 
-        if (!user || !user.password) {
-          return null;
-        }
+        if (!user || !user.password) return null;
 
-        const passwordsMatch = await bcrypt.compare(
-          password,
-          user.password,
-        );
-
-        if (!passwordsMatch) {
-          return null;
-        }
+        const passwordsMatch = await bcrypt.compare(password, user.password);
+        if (!passwordsMatch) return null;
 
         return user;
       },
-    }), 
-    GitHub, 
-    Google
+    }),
   ],
   pages: {
     signIn: "/sign-in",
-    error: "/sign-in"
+    error: "/sign-in",
   },
   session: {
     strategy: "jwt",
@@ -83,15 +79,25 @@ export default {
       if (token.id) {
         session.user.id = token.id;
       }
-
       return session;
     },
-    jwt({ token, user }) {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;  
+        token.id = user.id;
+      }
+
+      if (!token.id && token.email) {
+        const query = await db.select().from(users).where(eq(users.email, token.email));
+        if (query[0]) {
+          token.id = query[0].id;
+        }
+      }
+
+      if (!token.id && token.sub) {
+        token.id = token.sub;
       }
 
       return token;
-    }
+    },
   },
-} satisfies NextAuthConfig
+} satisfies NextAuthConfig;

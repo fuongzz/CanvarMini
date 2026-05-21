@@ -41,9 +41,10 @@ const app = new Hono()
     zValidator("param", z.object({ id: z.string() })),
     async (c) => {
       const auth = c.get("authUser");
+      const userId = (auth?.token?.id ?? auth?.token?.sub) as string | undefined;
       const { id } = c.req.valid("param");
 
-      if (!auth.token?.id) {
+      if (!userId) {
         return c.json({ error: "Unauthorized" }, 401);
       }
 
@@ -52,7 +53,7 @@ const app = new Hono()
         .where(
           and(
             eq(projects.id, id),
-            eq(projects.userId, auth.token.id),
+            eq(projects.userId, userId),
           ),
         )
         .returning();
@@ -70,9 +71,10 @@ const app = new Hono()
     zValidator("param", z.object({ id: z.string() })),
     async (c) => {
       const auth = c.get("authUser");
+      const userId = (auth?.token?.id ?? auth?.token?.sub) as string | undefined;
       const { id } = c.req.valid("param");
 
-      if (!auth.token?.id) {
+      if (!userId) {
         return c.json({ error: "Unauthorized" }, 401);
       }
 
@@ -82,12 +84,12 @@ const app = new Hono()
         .where(
           and(
             eq(projects.id, id),
-            eq(projects.userId, auth.token.id),
+            eq(projects.userId, userId),
           ),
         );
 
       if (data.length === 0) {
-        return c.json({ error:" Not found" }, 404);
+        return c.json({ error: "Not found" }, 404);
       }
 
       const project = data[0];
@@ -99,7 +101,7 @@ const app = new Hono()
           json: project.json,
           width: project.width,
           height: project.height,
-          userId: auth.token.id,
+          userId,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -120,16 +122,17 @@ const app = new Hono()
     ),
     async (c) => {
       const auth = c.get("authUser");
+      const userId = (auth?.token?.id ?? auth?.token?.sub) as string | undefined;
       const { page, limit } = c.req.valid("query");
 
-      if (!auth.token?.id) {
+      if (!userId) {
         return c.json({ error: "Unauthorized" }, 401);
       }
 
       const data = await db
         .select()
         .from(projects)
-        .where(eq(projects.userId, auth.token.id))
+        .where(eq(projects.userId, userId))
         .limit(limit)
         .offset((page - 1) * limit)
         .orderBy(desc(projects.updatedAt))
@@ -160,10 +163,11 @@ const app = new Hono()
     ),
     async (c) => {
       const auth = c.get("authUser");
+      const userId = (auth?.token?.id ?? auth?.token?.sub) as string | undefined;
       const { id } = c.req.valid("param");
       const values = c.req.valid("json");
 
-      if (!auth.token?.id) {
+      if (!userId) {
         return c.json({ error: "Unauthorized" }, 401);
       }
 
@@ -176,7 +180,7 @@ const app = new Hono()
         .where(
           and(
             eq(projects.id, id),
-            eq(projects.userId, auth.token.id),
+            eq(projects.userId, userId),
           ),
         )
         .returning();
@@ -194,9 +198,10 @@ const app = new Hono()
     zValidator("param", z.object({ id: z.string() })),
     async (c) => {
       const auth = c.get("authUser");
+      const userId = (auth?.token?.id ?? auth?.token?.sub) as string | undefined;
       const { id } = c.req.valid("param");
 
-      if (!auth.token?.id) {
+      if (!userId) {
         return c.json({ error: "Unauthorized" }, 401);
       }
 
@@ -206,7 +211,7 @@ const app = new Hono()
         .where(
           and(
             eq(projects.id, id),
-            eq(projects.userId, auth.token.id)
+            eq(projects.userId, userId),
           )
         );
 
@@ -231,9 +236,10 @@ const app = new Hono()
     ),
     async (c) => {
       const auth = c.get("authUser");
+      const userId = (auth?.token?.id ?? auth?.token?.sub) as string | undefined;
       const { name, json, height, width } = c.req.valid("json");
 
-      if (!auth.token?.id) {
+      if (!userId) {
         return c.json({ error: "Unauthorized" }, 401);
       }
 
@@ -244,7 +250,7 @@ const app = new Hono()
           json,
           width,
           height,
-          userId: auth.token.id,
+          userId,
           createdAt: new Date(),
           updatedAt: new Date(),
         })

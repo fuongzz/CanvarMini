@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/react";
 
 import { SubscriptionAlert } from "@/features/subscriptions/components/subscription-alert";
+import { LanguageProvider } from "@/contexts/language-context";
 
 import { auth } from "@/auth";
 import { Modals } from "@/components/modals";
@@ -15,7 +16,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "The Canvas",
+  title: "Raku Slide",
   description: "Build Something Great!",
 };
 
@@ -30,12 +31,14 @@ export default async function RootLayout({
     <SessionProvider session={session}>
       <html lang="en">
         <body className={inter.className}>
-          <Providers>
-            <Toaster />
-            <Modals />
-            <SubscriptionAlert />
-            {children}
-          </Providers>
+          <LanguageProvider>
+            <Providers>
+              <Toaster />
+              <Modals />
+              <SubscriptionAlert />
+              {children}
+            </Providers>
+          </LanguageProvider>
           <Analytics />
         </body>
       </html>

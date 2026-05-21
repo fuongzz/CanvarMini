@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { usePaywall } from "@/features/subscriptions/hooks/use-paywall";
 
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Loader2 } from "lucide-react";
 
 interface AiSidebarProps {
   editor: Editor | undefined;
@@ -28,10 +29,20 @@ export const AiSidebar = ({
   const mutation = useGenerateImage();
 
   const [value, setValue] = useState("");
+  const [elapsed, setElapsed] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const onSubmit = (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  useEffect(() => {
+    if (mutation.isPending) {
+      setElapsed(0);
+      timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [mutation.isPending]);
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (shouldBlock) {
@@ -39,10 +50,15 @@ export const AiSidebar = ({
       return;
     }
 
+    mutation.reset();
     mutation.mutate({ prompt: value }, {
       onSuccess: ({ data }) => {
         editor?.addImage(data);
-      }
+        mutation.reset();
+      },
+      onError: () => {
+        mutation.reset();
+      },
     });
   };
 
@@ -78,7 +94,12 @@ export const AiSidebar = ({
             type="submit"
             className="w-full"
           >
-            Generate
+            {mutation.isPending ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                Generating... {elapsed}s
+              </span>
+            ) : "Generate"}
           </Button>
         </form>
       </ScrollArea>

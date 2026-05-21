@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useLanguage } from "@/contexts/language-context";
 
 export const ProjectsSection = () => {
   const [ConfirmDialog, confirm] = useConfirm(
@@ -53,6 +54,8 @@ export const ProjectsSection = () => {
     }
   };
 
+  const { t } = useLanguage();
+
   const {
     data,
     status,
@@ -65,7 +68,7 @@ export const ProjectsSection = () => {
     return (
       <div className="space-y-4">
         <h3 className="font-semibold text-lg">
-          Recent projects
+          {t.recentProjects}
         </h3>
         <div className="flex flex-col gap-y-4 items-center justify-center h-32">
           <Loader className="size-6 animate-spin text-muted-foreground" />
@@ -78,12 +81,12 @@ export const ProjectsSection = () => {
     return (
       <div className="space-y-4">
         <h3 className="font-semibold text-lg">
-          Recent projects
+          {t.recentProjects}
         </h3>
         <div className="flex flex-col gap-y-4 items-center justify-center h-32">
           <AlertTriangle className="size-6 text-muted-foreground" />
           <p className="text-muted-foreground text-sm">
-            Failed to load projects
+            {t.failedProjects}
           </p>
         </div>
       </div>
@@ -97,7 +100,7 @@ export const ProjectsSection = () => {
     return (
       <div className="space-y-4">
         <h3 className="font-semibold text-lg">
-          Recent projects
+          {t.recentProjects}
         </h3>
         <div className="flex flex-col gap-y-4 items-center justify-center h-32">
           <Search className="size-6 text-muted-foreground" />
