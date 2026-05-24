@@ -29,7 +29,12 @@
 ```bash
 git clone https://github.com/fuongzz/CanvarMini
 cd CanvarMini/canva-clone
+
+# Dùng npm
 npm install
+
+# Hoặc dùng Bun
+bun install
 ```
 
 ---
@@ -115,6 +120,40 @@ AUTH_SECRET=<kết quả ở trên>
 
 ---
 
+### SMTP Email (bắt buộc cho Forgot Password OTP)
+
+Chức năng `Forgot Password` sẽ gửi mã OTP qua email bằng SMTP.
+
+1. Chuẩn bị tài khoản SMTP:
+   - Gmail: dùng `smtp.gmail.com`, port `587`, và **App Password** (không dùng mật khẩu thường)
+   - Outlook/Hotmail: dùng `smtp.office365.com`, port `587`
+   - Mailtrap/SendGrid SMTP: dùng thông số SMTP trong dashboard
+
+2. Điền các biến sau vào `.env.local`:
+   ```
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your-email@gmail.com
+   SMTP_PASS=your-app-password
+   SMTP_FROM=SlideRaku <your-email@gmail.com>
+   ```
+
+#### Cách tạo App Password (Gmail)
+
+1. Truy cập trang [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+2. Nếu Google yêu cầu, bật **2-Step Verification** cho tài khoản trước.
+3. Nhập tên ứng dụng (ví dụ `SlideRaku Local`) rồi nhấn **Create/Generate**.
+4. Copy chuỗi 16 ký tự Google cung cấp.
+5. Dán chuỗi đó vào `SMTP_PASS` trong `.env.local`.
+
+> Lưu ý: `SMTP_PASS` phải là App Password, không phải mật khẩu đăng nhập Gmail thông thường.
+
+3. Restart dev server sau khi đổi biến môi trường.
+
+> Nếu thiếu một trong các biến SMTP, API forgot password sẽ trả lỗi gửi OTP.
+
+---
+
 ### 5. Gemini AI (bắt buộc cho AI Chat)
 
 1. Vào [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) → **Create API key**
@@ -191,6 +230,13 @@ AUTH_GOOGLE_SECRET=
 # Database
 DATABASE_URL=postgresql://...
 
+# Forgot Password OTP Email (SMTP)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+
 # Gemini AI Chat
 GEMINI_API_KEY=
 
@@ -216,10 +262,27 @@ STRIPE_WEBHOOK_SECRET=
 
 ```bash
 # Chạy migration database (chỉ cần làm 1 lần)
-npx drizzle-kit migrate
+npm run db:migrate
 
 # Khởi động dev server
 npm run dev
+```
+
+Hoặc nếu dùng Bun:
+
+```bash
+# Chạy migration database (chỉ cần làm 1 lần)
+bun run db:migrate
+
+# Khởi động dev server
+bun dev
+```
+
+Build production:
+
+```bash
+npm run build
+npm run start
 ```
 
 Mở [http://localhost:3000](http://localhost:3000) — đăng nhập bằng GitHub hoặc Google.
@@ -239,6 +302,8 @@ Mở [http://localhost:3000](http://localhost:3000) — đăng nhập bằng Git
 | Công nghệ | Dùng cho |
 |-----------|----------|
 | Next.js 14 | Framework |
+| React 18 | UI library |
+| TypeScript | Type-safe development |
 | Fabric.js 5 | Canvas editor |
 | Drizzle ORM | Database ORM |
 | NeonDB | PostgreSQL serverless |
@@ -249,5 +314,7 @@ Mở [http://localhost:3000](http://localhost:3000) — đăng nhập bằng Git
 | Replicate | AI image gen |
 | Stripe | Payments |
 | TanStack Query | Data fetching |
+| Zustand | Client state management |
 | Tailwind CSS | Styling |
 | shadcn/ui | UI components |
+| Nodemailer | SMTP email (OTP) |

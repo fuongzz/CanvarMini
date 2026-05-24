@@ -35,6 +35,13 @@ GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+
+# Email (Forgot Password OTP)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
 ```
 
 ---
@@ -167,6 +174,30 @@ GOOGLE_CLIENT_SECRET=
 - **Source:** Google Cloud Console → APIs & Services → Credentials → OAuth Client
 - **Purpose:** Google OAuth authentication
 - **Setup Guide:** [09-GOOGLE-OAUTH.md](./09-GOOGLE-OAUTH.md)
+
+---
+
+### Email Variables
+
+#### `SMTP_HOST`
+- **Required:** Yes (for forgot password email)
+- **Format:** SMTP host, e.g. `smtp.gmail.com`
+
+#### `SMTP_PORT`
+- **Required:** Yes (for forgot password email)
+- **Format:** Port number, usually `587` (STARTTLS) or `465` (SSL)
+
+#### `SMTP_USER`
+- **Required:** Yes (for forgot password email)
+- **Format:** SMTP username (often your email address)
+
+#### `SMTP_PASS`
+- **Required:** Yes (for forgot password email)
+- **Format:** SMTP password or app password
+
+#### `SMTP_FROM`
+- **Required:** Yes (for forgot password email)
+- **Format:** Sender email, e.g. `SlideRaku <no-reply@yourdomain.com>`
 
 ---
 

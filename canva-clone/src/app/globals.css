@@ -9,33 +9,33 @@ body {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 100% 99%;
+    --foreground: 245 40% 14%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 245 40% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 245 40% 14%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 250 84% 58%;
+    --primary-foreground: 240 100% 99%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 237 100% 96%;
+    --secondary-foreground: 245 40% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 239 100% 97%;
+    --muted-foreground: 245 18% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 231 100% 95%;
+    --accent-foreground: 245 40% 20%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 237 40% 88%;
+    --input: 237 40% 88%;
+    --ring: 248 90% 64%;
 
     --radius: 0.5rem;
   }
@@ -77,6 +77,8 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(circle at top left, rgba(96, 110, 255, 0.12), transparent 42%), radial-gradient(circle at top right, rgba(139, 92, 246, 0.1), transparent 40%);
+    background-attachment: fixed;
   }
 }
 
@@ -89,4 +91,23 @@ body {
   box-shadow: none !important;
   border-radius: 0.5rem !important;
   overflow: hidden !important;
+}
+
+.editor-slide-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.editor-slide-stage:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  background: #0f172a;
+  padding: 24px;
+}
+
+.editor-slide-stage:fullscreen canvas {
+  margin: 0 auto;
 }

@@ -3,28 +3,38 @@ import bcrypt from "bcryptjs";
 import type { NextAuthConfig } from "next-auth";
 import { eq } from "drizzle-orm";
 import { JWT } from "next-auth/jwt";
+import type { AdapterAccountType } from "next-auth/adapters";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 
 import { db } from "@/db/drizzle";
-import { users } from "@/db/schema";
+import { accounts, users } from "@/db/schema";
 
 const CredentialsSchema = z.object({
   email: z.string().email(),
   password: z.string(),
+  remember: z.union([z.literal("1"), z.literal("0")]).optional(),
 });
 
 declare module "next-auth/jwt" {
   interface JWT {
     id: string | undefined;
+    rememberMe?: boolean;
   }
 }
 
 declare module "@auth/core/jwt" {
   interface JWT {
     id: string | undefined;
+    rememberMe?: boolean;
   }
 }
+
+type AuthorizedUser = {
+  id: string;
+  rememberMe?: boolean;
+};
 
 const DEMO_ACCOUNTS = [
   { email: "demo.a@canvar.com", password: "demo123", name: "Demo Account A" },
@@ -38,12 +48,14 @@ export default {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        remember: { label: "Remember", type: "text" },
       },
       async authorize(credentials) {
         const validatedFields = CredentialsSchema.safeParse(credentials);
         if (!validatedFields.success) return null;
 
-        const { email, password } = validatedFields.data;
+        const { email, password, remember } = validatedFields.data;
+        const rememberMe = remember !== "0";
 
         // Auto-create demo accounts on first login
         const demo = DEMO_ACCOUNTS.find((d) => d.email === email);
@@ -63,9 +75,31 @@ export default {
         const passwordsMatch = await bcrypt.compare(password, user.password);
         if (!passwordsMatch) return null;
 
-        return user;
+        // Auto-link a Google account record with the same email for profile connectivity.
+        await db
+          .insert(accounts)
+          .values({
+            userId: user.id,
+            type: "oauth" as AdapterAccountType,
+            provider: "google",
+            providerAccountId: email,
+          })
+          .onConflictDoNothing();
+
+        return {
+          ...user,
+          rememberMe,
+        };
       },
     }),
+    ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+      ? [
+          Google({
+            clientId: process.env.AUTH_GOOGLE_ID,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET,
+          }),
+        ]
+      : []),
   ],
   pages: {
     signIn: "/sign-in",
@@ -84,6 +118,12 @@ export default {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+
+        const authorizedUser = user as AuthorizedUser;
+        if (typeof authorizedUser.rememberMe === "boolean") {
+          token.rememberMe = authorizedUser.rememberMe;
+          token.exp = Math.floor(Date.now() / 1000) + (authorizedUser.rememberMe ? 30 : 1) * 24 * 60 * 60;
+        }
       }
 
       if (!token.id && token.email) {

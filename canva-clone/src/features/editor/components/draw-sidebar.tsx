@@ -16,12 +16,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface DrawSidebarProps {
   editor: Editor | undefined;
   activeTool: ActiveTool;
+  lineMode: "free" | "line" | "arrow";
+  onChangeLineMode: (mode: "free" | "line" | "arrow") => void;
   onChangeActiveTool: (tool: ActiveTool) => void;
 };
 
 export const DrawSidebar = ({
   editor,
   activeTool,
+  lineMode,
+  onChangeLineMode,
   onChangeActiveTool,
 }: DrawSidebarProps) => {
   const colorValue = editor?.getActiveStrokeColor() || STROKE_COLOR;
@@ -54,10 +58,12 @@ export const DrawSidebar = ({
       <ScrollArea>
         <div className="p-4 space-y-6 border-b">
           <Label className="text-sm">
-            Brush width
+            Stroke width
           </Label>
           <Slider
             value={[widthValue]}
+            min={1}
+            max={50}
             onValueChange={(values) => onWidthChange(values[0])}
           />
         </div>

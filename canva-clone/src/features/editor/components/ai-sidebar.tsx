@@ -52,8 +52,19 @@ export const AiSidebar = ({
 
     mutation.reset();
     mutation.mutate({ prompt: value }, {
-      onSuccess: ({ data }) => {
-        editor?.addImage(data);
+      onSuccess: (result) => {
+        const imageData =
+          typeof result === "string"
+            ? result
+            : result && typeof result === "object" && "data" in result && typeof result.data === "string"
+              ? result.data
+              : null;
+
+        if (!imageData) {
+          return;
+        }
+
+        editor?.addImage(imageData);
         mutation.reset();
       },
       onError: () => {

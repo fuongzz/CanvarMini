@@ -2,7 +2,7 @@
 
 import { fabric } from "fabric";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Bot, User, Send, Trash2, Wand2, Layers, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Bot, User, Send, Trash2, Wand2, Layers, ChevronDown, ChevronUp, Loader2, Plus, Mic } from "lucide-react";
 
 import { ActiveTool, Editor } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
@@ -262,7 +262,7 @@ export const ChatSidebar = ({ editor, activeTool, onChangeActiveTool }: ChatSide
   return (
     <aside
       className={cn(
-        "bg-white relative border-r z-[40] w-[360px] h-full flex flex-col",
+        "bg-white relative border-l z-[40] w-[360px] h-full flex flex-col",
         activeTool === "chat" ? "visible" : "hidden",
       )}
     >
@@ -366,6 +366,15 @@ export const ChatSidebar = ({ editor, activeTool, onChangeActiveTool }: ChatSide
       {/* Input */}
       <div className="p-3 border-t border-gray-100 bg-white shrink-0">
         <div className="flex gap-2 items-end">
+          <button
+            type="button"
+            disabled={loading || applying}
+            className="p-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+            title="Attach file"
+            aria-label="Attach file"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -375,6 +384,15 @@ export const ChatSidebar = ({ editor, activeTool, onChangeActiveTool }: ChatSide
             disabled={loading || applying}
             className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-900 placeholder-gray-400 resize-none focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-200 transition-colors disabled:opacity-60"
           />
+          <button
+            type="button"
+            disabled={loading || applying}
+            className="p-2.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-gray-600"
+            title="Voice input"
+            aria-label="Voice input"
+          >
+            <Mic className="w-4 h-4" />
+          </button>
           <button
             onClick={() => send()}
             disabled={!input.trim() || loading || applying}

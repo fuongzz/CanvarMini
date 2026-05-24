@@ -3,9 +3,11 @@ import { Hono } from "hono";
 import bcrypt from "bcryptjs";
 import { eq, and } from "drizzle-orm";
 import { zValidator } from "@hono/zod-validator";
+import type { AdapterAccountType } from "next-auth/adapters";
 
 import { db } from "@/db/drizzle";
-import { users, verificationTokens } from "@/db/schema";
+import { accounts, users, verificationTokens } from "@/db/schema";
+import { sendForgotPasswordOtpEmail } from "@/lib/mailer";
 
 const app = new Hono()
   .post(
@@ -33,12 +35,26 @@ const app = new Hono()
         return c.json({ error: "Email already in use" }, 400);
       }
 
-      await db.insert(users).values({
+      const createdUsers = await db.insert(users).values({
         email,
         name,
         password: hashedPassword,
         language: language ?? "en",
-      });
+      }).returning({ id: users.id });
+
+      const createdUser = createdUsers[0];
+
+      if (createdUser?.id) {
+        await db
+          .insert(accounts)
+          .values({
+            userId: createdUser.id,
+            type: "oauth" as AdapterAccountType,
+            provider: "google",
+            providerAccountId: email,
+          })
+          .onConflictDoNothing();
+      }
       
       return c.json(null, 200);
     },
@@ -61,8 +77,12 @@ const app = new Hono()
       await db.delete(verificationTokens).where(eq(verificationTokens.identifier, email));
       await db.insert(verificationTokens).values({ identifier: email, token: otp, expires });
 
-      // Dev: in OTP ra terminal
-      console.log(`[OTP] ${email} → ${otp}`);
+      try {
+        await sendForgotPasswordOtpEmail(email, otp);
+      } catch (error) {
+        console.error("Failed to send OTP email:", error);
+        return c.json({ error: "Could not send OTP email" }, 500);
+      }
 
       return c.json({ ok: true }, 200);
     },

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { useFailModal } from "@/features/subscriptions/store/use-fail-modal";
+import { useLanguage } from "@/contexts/language-context";
 
 import {
   Dialog,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 
 export const FailModal = () => {
   const router = useRouter();
+  const { t } = useLanguage();
   const { isOpen, onClose } = useFailModal();
 
   const handleClose = () => {
@@ -35,10 +37,10 @@ export const FailModal = () => {
             height={36}
           />
           <DialogTitle className="text-center">
-            Something went wrong
+            {t.somethingWrong}
           </DialogTitle>
           <DialogDescription className="text-center">
-            We could not process your payment
+            {t.paymentProcessFailed}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="pt-2 mt-4 gap-y-2">
@@ -46,7 +48,7 @@ export const FailModal = () => {
             className="w-full"
             onClick={handleClose}
           >
-            Continue
+            {t.continue}
           </Button>
         </DialogFooter>
       </DialogContent>

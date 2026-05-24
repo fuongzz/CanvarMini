@@ -16,30 +16,67 @@ export const useCanvasEvents = ({
 }: UseCanvasEventsProps) => {
   useEffect(() => {
     if (canvas) {
-      canvas.on("object:added", () => save());
-      canvas.on("object:removed", () => save());
-      canvas.on("object:modified", () => save());
-      canvas.on("selection:created", (e) => {
+      const isHistoryLocked = () => {
+        return Number((canvas as any).__historyLockCount || 0) > 0;
+      };
+
+      const isTransientObject = (target?: fabric.Object) => {
+        return Boolean((target as any)?.__transientCropUi);
+      };
+
+      const onObjectAdded = (event: fabric.IEvent) => {
+        if (isHistoryLocked() || isTransientObject(event.target as fabric.Object | undefined)) {
+          return;
+        }
+        save();
+      };
+
+      const onObjectRemoved = (event: fabric.IEvent) => {
+        if (isHistoryLocked() || isTransientObject(event.target as fabric.Object | undefined)) {
+          return;
+        }
+        save();
+      };
+
+      const onObjectModified = (event: fabric.IEvent) => {
+        if (isHistoryLocked() || isTransientObject(event.target as fabric.Object | undefined)) {
+          return;
+        }
+        save();
+      };
+
+      const onSelectionCreated = (e: fabric.IEvent) => {
         setSelectedObjects(e.selected || []);
-      });
-      canvas.on("selection:updated", (e) => {
+      };
+
+      const onSelectionUpdated = (e: fabric.IEvent) => {
         setSelectedObjects(e.selected || []);
-      });
-      canvas.on("selection:cleared", () => {
+      };
+
+      const onSelectionCleared = () => {
         setSelectedObjects([]);
         clearSelectionCallback?.();
-      });
+      };
+
+      canvas.on("object:added", onObjectAdded);
+      canvas.on("object:removed", onObjectRemoved);
+      canvas.on("object:modified", onObjectModified);
+      canvas.on("selection:created", onSelectionCreated);
+      canvas.on("selection:updated", onSelectionUpdated);
+      canvas.on("selection:cleared", onSelectionCleared);
+
+      return () => {
+        canvas.off("object:added", onObjectAdded);
+        canvas.off("object:removed", onObjectRemoved);
+        canvas.off("object:modified", onObjectModified);
+        canvas.off("selection:created", onSelectionCreated);
+        canvas.off("selection:updated", onSelectionUpdated);
+        canvas.off("selection:cleared", onSelectionCleared);
+      };
     }
 
     return () => {
-      if (canvas) {
-        canvas.off("object:added");
-        canvas.off("object:removed");
-        canvas.off("object:modified");
-        canvas.off("selection:created");
-        canvas.off("selection:updated");
-        canvas.off("selection:cleared");
-      }
+      // no-op
     };
   },
   [

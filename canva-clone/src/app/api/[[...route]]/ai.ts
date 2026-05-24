@@ -239,6 +239,56 @@ const app = new Hono()
 
       return c.json({ error: "Failed to generate image, please try again" }, 500);
     },
+  )
+  .post(
+    "/translate",
+    verifyAuth(),
+    zValidator(
+      "json",
+      z.object({
+        text: z.string().min(1),
+        targetLanguage: z.string().min(2).max(10),
+        sourceLanguage: z.string().min(2).max(10).optional(),
+      }),
+    ),
+    async (c) => {
+      const { text, targetLanguage, sourceLanguage } = c.req.valid("json");
+
+      try {
+        const source = sourceLanguage ?? "auto";
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${encodeURIComponent(source)}&tl=${encodeURIComponent(targetLanguage)}&dt=t&q=${encodeURIComponent(text)}`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Accept": "application/json,text/plain,*/*",
+            "User-Agent": "Mozilla/5.0",
+          },
+        });
+
+        if (!response.ok) {
+          return c.json({ error: "Translation service unavailable" }, 502);
+        }
+
+        const data = (await response.json()) as unknown;
+        const segments = Array.isArray(data) && Array.isArray((data as any)[0])
+          ? ((data as any)[0] as unknown[])
+          : [];
+
+        const translatedText = segments
+          .map((segment) => (Array.isArray(segment) ? String(segment[0] ?? "") : ""))
+          .join("")
+          .trim();
+
+        if (!translatedText) {
+          return c.json({ error: "No translation returned" }, 502);
+        }
+
+        return c.json({ data: translatedText });
+      } catch {
+        return c.json({ error: "Failed to translate text" }, 500);
+      }
+    },
   );
 
 export default app;

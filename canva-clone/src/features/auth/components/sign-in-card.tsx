@@ -7,11 +7,10 @@ import { Eye, EyeOff, Loader2, TriangleAlert, User } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 import { useLanguage } from "@/contexts/language-context";
-import { LanguageSwitcher } from "@/components/language-switcher";
 
 const DEMO_ACCOUNTS = [
-  { label: "Demo Account A", email: "demo.a@canvar.com", password: "demo123" },
-  { label: "Demo Account B", email: "demo.b@canvar.com", password: "demo123" },
+  { key: "demoAccountA", email: "demo.a@canvar.com", password: "demo123" },
+  { key: "demoAccountB", email: "demo.b@canvar.com", password: "demo123" },
 ];
 
 export const SignInCard = () => {
@@ -19,8 +18,10 @@ export const SignInCard = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [keepLoggedIn, setKeepLoggedIn] = useState(true);
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const params = useSearchParams();
   const error = params.get("error");
@@ -28,22 +29,35 @@ export const SignInCard = () => {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    signIn("credentials", { email, password, callbackUrl: "/" });
+    signIn("credentials", {
+      email,
+      password,
+      remember: keepLoggedIn ? "1" : "0",
+      callbackUrl: "/",
+    });
   };
 
   const onDemoLogin = (account: typeof DEMO_ACCOUNTS[0]) => {
-    setDemoLoading(account.label);
-    signIn("credentials", { email: account.email, password: account.password, callbackUrl: "/" });
+    setDemoLoading(account.key);
+    signIn("credentials", {
+      email: account.email,
+      password: account.password,
+      remember: keepLoggedIn ? "1" : "0",
+      callbackUrl: "/",
+    });
+  };
+
+  const onGoogleLogin = () => {
+    setGoogleLoading(true);
+    signIn("google", { callbackUrl: "/" });
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-8 w-full">
-      {/* Header: Logo + Language Switcher */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <span className="text-2xl font-extrabold text-white bg-indigo-600 px-3 py-1 rounded-lg tracking-tight">
           {t.appName}
         </span>
-        <LanguageSwitcher />
       </div>
 
       {/* Demo accounts */}
@@ -54,16 +68,16 @@ export const SignInCard = () => {
         <div className="flex gap-2">
           {DEMO_ACCOUNTS.map((account) => (
             <button
-              key={account.label}
+              key={account.key}
               onClick={() => onDemoLogin(account)}
-              disabled={!!demoLoading || loading}
+              disabled={!!demoLoading || loading || googleLoading}
               className="flex-1 border border-indigo-200 bg-white hover:bg-indigo-50 rounded-lg py-2 text-xs font-medium text-indigo-700 flex items-center justify-center gap-1.5 transition disabled:opacity-60"
             >
-              {demoLoading === account.label
+              {demoLoading === account.key
                 ? <Loader2 className="size-3 animate-spin" />
                 : <User className="size-3" />
               }
-              {account.label}
+              {t[account.key as "demoAccountA" | "demoAccountB"]}
             </button>
           ))}
         </div>
@@ -97,7 +111,7 @@ export const SignInCard = () => {
             onChange={(e) => setEmail(e.target.value)}
             placeholder={t.emailPlaceholder}
             required
-            disabled={loading || !!demoLoading}
+            disabled={loading || !!demoLoading || googleLoading}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent transition disabled:opacity-60"
           />
         </div>
@@ -116,9 +130,9 @@ export const SignInCard = () => {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={t.emailPlaceholder.replace("email", "••••••••").replace("ten@", "").replace("name@", "")}
+              placeholder={t.passwordPlaceholder}
               required
-              disabled={loading || !!demoLoading}
+              disabled={loading || !!demoLoading || googleLoading}
               className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-11 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent transition disabled:opacity-60"
             />
             <button
@@ -131,15 +145,45 @@ export const SignInCard = () => {
           </div>
         </div>
 
+        <label className="flex items-center gap-2 text-sm text-gray-600 select-none">
+          <input
+            type="checkbox"
+            checked={keepLoggedIn}
+            onChange={(e) => setKeepLoggedIn(e.target.checked)}
+            disabled={loading || !!demoLoading || googleLoading}
+            className="size-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          />
+          <span>{t.keepLoggedIn}</span>
+        </label>
+
         <button
           type="submit"
-          disabled={loading || !!demoLoading}
+          disabled={loading || !!demoLoading || googleLoading}
           className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold rounded-xl py-3 text-sm transition flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 className="size-4 animate-spin" /> : null}
           {t.signInNow}
         </button>
       </form>
+
+      <button
+        type="button"
+        onClick={onGoogleLogin}
+        disabled={loading || !!demoLoading || googleLoading}
+        className="mt-3 w-full border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-60 text-gray-700 font-semibold rounded-xl py-3 text-sm transition flex items-center justify-center gap-2"
+      >
+        {googleLoading ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
+            <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-.9 2.3-1.9 3.1l3 2.3c1.8-1.6 2.8-4 2.8-6.8 0-.7-.1-1.4-.2-2H12z" />
+            <path fill="#34A853" d="M6.6 14.3l-.7.6-2.5 1.9C5 19.9 8.2 22 12 22c2.7 0 4.9-.9 6.5-2.5l-3-2.3c-.8.6-2 1-3.5 1-2.7 0-5-1.8-5.8-4.2z" />
+            <path fill="#4A90E2" d="M3.4 7.2C2.5 8.9 2 10.4 2 12s.5 3.1 1.4 4.8c0 0 3.2-2.5 3.2-2.5-.2-.6-.3-1.2-.3-1.8s.1-1.2.3-1.8z" />
+            <path fill="#FBBC05" d="M12 5.8c1.5 0 2.8.5 3.9 1.5l2.9-2.9C16.9 2.5 14.7 2 12 2 8.2 2 5 4.1 3.4 7.2l3.2 2.5c.8-2.4 3.1-3.9 5.4-3.9z" />
+          </svg>
+        )}
+        {t.signInWithGoogle}
+      </button>
 
       <p className="text-sm text-center text-gray-500 mt-6">
         {t.noAccount}{" "}

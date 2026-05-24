@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActiveTool, Editor } from "@/features/editor/types";
 import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-close";
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
-import { ColorPicker } from "@/features/editor/components/color-picker";
+import { useLanguage } from "@/contexts/language-context";
 
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -22,33 +22,26 @@ export const SettingsSidebar = ({
   activeTool,
   onChangeActiveTool,
 }: SettingsSidebarProps) => {
+  const { t } = useLanguage();
   const workspace = editor?.getWorkspace();
 
   const initialWidth = useMemo(() => `${workspace?.width ?? 0}`, [workspace]);
   const initialHeight = useMemo(() => `${workspace?.height ?? 0}`, [workspace]);
-  const initialBackground = useMemo(() => workspace?.fill ?? "#ffffff", [workspace]);
 
   const [width, setWidth] = useState(initialWidth);
   const [height, setHeight] = useState(initialHeight);
-  const [background, setBackground] = useState(initialBackground);
 
   useEffect(() => {
     setWidth(initialWidth);
     setHeight(initialHeight);
-    setBackground(initialBackground);
   }, 
   [
     initialWidth,
-    initialHeight,
-    initialBackground
+    initialHeight
   ]);
 
   const changeWidth = (value: string) => setWidth(value);
   const changeHeight = (value: string) => setHeight(value);
-  const changeBackground = (value: string) => {
-    setBackground(value);
-    editor?.changeBackground(value);
-  };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,7 +65,7 @@ export const SettingsSidebar = ({
     >
       <ToolSidebarHeader
         title="Settings"
-        description="Change the look of your workspace"
+        description={t.resizeWorkspaceDescription}
       />
       <ScrollArea>
         <form className="space-y-4 p-4" onSubmit={onSubmit}>
@@ -102,12 +95,6 @@ export const SettingsSidebar = ({
             Resize
           </Button>
         </form>
-        <div className="p-4">
-          <ColorPicker
-            value={background as string} // We dont support gradients or patterns
-            onChange={changeBackground}
-          />
-        </div>
       </ScrollArea>
       <ToolSidebarClose onClick={onClose} />
     </aside>

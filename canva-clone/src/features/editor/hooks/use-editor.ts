@@ -139,6 +139,16 @@ const buildEditor = ({
     canvas.setActiveObject(object);
   };
 
+  const applyZoom = (zoomRatio: number) => {
+    const clampedZoom = Math.max(0.1, Math.min(5, zoomRatio));
+    const center = canvas.getCenter();
+
+    canvas.zoomToPoint(
+      new fabric.Point(center.left, center.top),
+      clampedZoom,
+    );
+  };
+
   return {
     savePng,
     saveJpg,
@@ -150,22 +160,18 @@ const buildEditor = ({
     autoZoom,
     getWorkspace,
     zoomIn: () => {
-      let zoomRatio = canvas.getZoom();
-      zoomRatio += 0.05;
-      const center = canvas.getCenter();
-      canvas.zoomToPoint(
-        new fabric.Point(center.left, center.top),
-        zoomRatio > 1 ? 1 : zoomRatio
-      );
+      const zoomRatio = canvas.getZoom() + 0.05;
+      applyZoom(zoomRatio);
     },
     zoomOut: () => {
-      let zoomRatio = canvas.getZoom();
-      zoomRatio -= 0.05;
-      const center = canvas.getCenter();
-      canvas.zoomToPoint(
-        new fabric.Point(center.left, center.top),
-        zoomRatio < 0.2 ? 0.2 : zoomRatio,
-      );
+      const zoomRatio = canvas.getZoom() - 0.05;
+      applyZoom(zoomRatio);
+    },
+    setZoomPercent: (value: number) => {
+      applyZoom(value / 100);
+    },
+    getZoomPercent: () => {
+      return Math.round(canvas.getZoom() * 100);
     },
     changeSize: (value: { width: number; height: number }) => {
       const workspace = getWorkspace();
@@ -230,9 +236,12 @@ const buildEditor = ({
       canvas.renderAll();
     },
     addText: (value, options) => {
+      const textStyleTemplate = ((canvas as any).__textStyleTemplate ?? {}) as Record<string, unknown>;
+
       const object = new fabric.Textbox(value, {
         ...TEXT_OPTIONS,
         fill: fillColor,
+        ...textStyleTemplate,
         ...options,
       });
 
@@ -533,6 +542,59 @@ const buildEditor = ({
         }
       );
       addToCanvas(object);
+    },
+    addTable: (rows: number, columns: number) => {
+      const safeRows = Math.max(1, Math.min(20, Math.floor(rows)));
+      const safeColumns = Math.max(1, Math.min(20, Math.floor(columns)));
+
+      const workspace = getWorkspace() as fabric.Rect | undefined;
+      const maxWidth = workspace?.width ? workspace.width * 0.8 : 1200;
+
+      const cellWidth = 140;
+      const cellHeight = 64;
+      const tableWidth = Math.min(maxWidth, safeColumns * cellWidth);
+      const normalizedCellWidth = tableWidth / safeColumns;
+
+      const objects: fabric.Object[] = [];
+
+      for (let row = 0; row < safeRows; row += 1) {
+        for (let column = 0; column < safeColumns; column += 1) {
+          const left = column * normalizedCellWidth;
+          const top = row * cellHeight;
+
+          objects.push(
+            new fabric.Rect({
+              left,
+              top,
+              width: normalizedCellWidth,
+              height: cellHeight,
+              fill: "#ffffff",
+              stroke: "#334155",
+              strokeWidth: 1,
+            }),
+          );
+
+          objects.push(
+            new fabric.Textbox("", {
+              left: left + 10,
+              top: top + 16,
+              width: normalizedCellWidth - 20,
+              fontSize: 18,
+              fill: "#0f172a",
+              fontFamily,
+              editable: true,
+            }),
+          );
+        }
+      }
+
+      const table = new fabric.Group(objects, {
+        left: 100,
+        top: 100,
+        subTargetCheck: true,
+      });
+
+      addToCanvas(table);
     },
     canvas,
     getActiveFontWeight: () => {

@@ -5,7 +5,7 @@ import { verifyAuth } from "@hono/auth-js";
 import { zValidator } from "@hono/zod-validator";
 
 import { db } from "@/db/drizzle";
-import { projects, projectsInsertSchema } from "@/db/schema";
+import { projects, projectsInsertSchema, users } from "@/db/schema";
 
 const app = new Hono()
   .get(
@@ -22,8 +22,23 @@ const app = new Hono()
       const { page, limit } = c.req.valid("query");
 
       const data = await db
-        .select()
+        .select({
+          id: projects.id,
+          name: projects.name,
+          userId: projects.userId,
+          json: projects.json,
+          height: projects.height,
+          width: projects.width,
+          thumbnailUrl: projects.thumbnailUrl,
+          isTemplate: projects.isTemplate,
+          isPro: projects.isPro,
+          createdAt: projects.createdAt,
+          updatedAt: projects.updatedAt,
+          userName: users.name,
+          userImage: users.image,
+        })
         .from(projects)
+        .leftJoin(users, eq(projects.userId, users.id))
         .where(eq(projects.isTemplate, true))
         .limit(limit)
         .offset((page -1) * limit)
@@ -130,7 +145,17 @@ const app = new Hono()
       }
 
       const data = await db
-        .select()
+        .select({
+          id: projects.id,
+          name: projects.name,
+          width: projects.width,
+          height: projects.height,
+          thumbnailUrl: projects.thumbnailUrl,
+          updatedAt: projects.updatedAt,
+          createdAt: projects.createdAt,
+          isTemplate: projects.isTemplate,
+          isPro: projects.isPro,
+        })
         .from(projects)
         .where(eq(projects.userId, userId))
         .limit(limit)
@@ -232,12 +257,15 @@ const app = new Hono()
         json: true,
         width: true,
         height: true,
+        thumbnailUrl: true,
+        isTemplate: true,
+        isPro: true,
       }),
     ),
     async (c) => {
       const auth = c.get("authUser");
       const userId = (auth?.token?.id ?? auth?.token?.sub) as string | undefined;
-      const { name, json, height, width } = c.req.valid("json");
+      const { name, json, height, width, thumbnailUrl, isTemplate, isPro } = c.req.valid("json");
 
       if (!userId) {
         return c.json({ error: "Unauthorized" }, 401);
@@ -250,6 +278,9 @@ const app = new Hono()
           json,
           width,
           height,
+          thumbnailUrl,
+          isTemplate,
+          isPro,
           userId,
           createdAt: new Date(),
           updatedAt: new Date(),

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { useSuccessModal } from "@/features/subscriptions/store/use-success-modal";
+import { useLanguage } from "@/contexts/language-context";
 
 import {
   Dialog,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 
 export const SuccessModal = () => {
   const router = useRouter();
+  const { t } = useLanguage();
   const { isOpen, onClose } = useSuccessModal();
 
   const handleClose = () => {
@@ -35,10 +37,10 @@ export const SuccessModal = () => {
             height={36}
           />
           <DialogTitle className="text-center">
-            Subscription successfull!
+            {t.subscriptionSuccessful}
           </DialogTitle>
           <DialogDescription className="text-center">
-            You have successfully subscribed to our service
+            {t.subscriptionSuccessDescription}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="pt-2 mt-4 gap-y-2">
@@ -46,7 +48,7 @@ export const SuccessModal = () => {
             className="w-full"
             onClick={handleClose}
           >
-            Continue
+            {t.continue}
           </Button>
         </DialogFooter>
       </DialogContent>

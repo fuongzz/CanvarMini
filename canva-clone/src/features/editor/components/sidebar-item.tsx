@@ -7,6 +7,7 @@ interface SidebarItemProps {
   icon: LucideIcon;
   label: string;
   isActive?: boolean;
+  disabled?: boolean;
   onClick: () => void;
 };
 
@@ -14,11 +15,13 @@ export const SidebarItem = ({
   icon: Icon,
   label,
   isActive,
+  disabled,
   onClick,
 }: SidebarItemProps) => {
   return (
     <Button
       variant="ghost"
+      disabled={disabled}
       onClick={onClick}
       className={cn(
         "w-full h-full aspect-video p-3 py-4 flex flex-col rounded-none",

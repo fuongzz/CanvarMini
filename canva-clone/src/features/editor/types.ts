@@ -94,6 +94,9 @@ export const colors = [
 
 export type ActiveTool =
   | "select"
+  | "folder"
+  | "tools"
+  | "lines"
   | "shapes"
   | "text"
   | "images"
@@ -178,6 +181,7 @@ export interface EditorHookProps {
     json: string;
     height: number;
     width: number;
+    thumbnailUrl?: string;
   }) => void;
 };
 
@@ -217,6 +221,8 @@ export interface Editor {
   autoZoom: () => void;
   zoomIn: () => void;
   zoomOut: () => void;
+  setZoomPercent: (value: number) => void;
+  getZoomPercent: () => number;
   getWorkspace: () => fabric.Object | undefined;
   changeBackground: (value: string) => void;
   changeSize: (value: { width: number; height: number }) => void;
@@ -256,6 +262,7 @@ export interface Editor {
   addTriangle: () => void;
   addInverseTriangle: () => void;
   addDiamond: () => void;
+  addTable: (rows: number, columns: number) => void;
   canvas: fabric.Canvas;
   getActiveFillColor: () => string;
   getActiveStrokeColor: () => string;

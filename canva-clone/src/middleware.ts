@@ -5,7 +5,10 @@ export default auth((req) => {
   const { nextUrl, auth: session } = req;
 
   const isApiRoute = nextUrl.pathname.startsWith("/api");
-  const isAuthRoute = nextUrl.pathname.startsWith("/sign-in") || nextUrl.pathname.startsWith("/sign-up");
+  const isAuthRoute =
+    nextUrl.pathname.startsWith("/sign-in") ||
+    nextUrl.pathname.startsWith("/sign-up") ||
+    nextUrl.pathname.startsWith("/forgot-password");
 
   // Always allow API routes and auth routes through
   if (isApiRoute || isAuthRoute) {

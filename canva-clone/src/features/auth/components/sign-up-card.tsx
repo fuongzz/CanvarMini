@@ -7,23 +7,23 @@ import { Eye, EyeOff, Loader2, TriangleAlert } from "lucide-react";
 
 import { useSignUp } from "@/features/auth/hooks/use-sign-up";
 import { useLanguage } from "@/contexts/language-context";
-import { LanguageSwitcher } from "@/components/language-switcher";
+import { Language } from "@/lib/translations";
 
-const LANGUAGE_OPTIONS = [
+const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
   { value: "en", label: "English" },
   { value: "vi", label: "Tiếng Việt" },
   { value: "jp", label: "日本語" },
 ];
 
 export const SignUpCard = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const mutation = useSignUp();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [language, setLanguage] = useState("en");
+  const [preferredLanguage, setPreferredLanguage] = useState<Language>(language);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordError, setPasswordError] = useState("");
@@ -40,7 +40,7 @@ export const SignUpCard = () => {
 
     setLoading(true);
     mutation.mutate(
-      { name, email, password, language },
+      { name, email, password, language: preferredLanguage },
       {
         onSuccess: () => {
           signIn("credentials", { email, password, callbackUrl: "/" });
@@ -52,14 +52,18 @@ export const SignUpCard = () => {
 
   const isLoading = mutation.isPending || loading;
 
+  const languageLabelMap = {
+    en: "English",
+    vi: "Tiếng Việt",
+    jp: "日本語",
+  } as const;
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-8 w-full">
-      {/* Header: Logo + Language Switcher */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <span className="text-2xl font-extrabold text-white bg-indigo-600 px-3 py-1 rounded-lg tracking-tight">
           {t.appName}
         </span>
-        <LanguageSwitcher />
       </div>
 
       {!!mutation.error && (
@@ -89,13 +93,15 @@ export const SignUpCard = () => {
               {t.preferredLanguage}
             </label>
             <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
+              value={preferredLanguage}
+              onChange={(e) => setPreferredLanguage(e.target.value as Language)}
               disabled={isLoading}
               className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-transparent transition disabled:opacity-60"
             >
-              {LANGUAGE_OPTIONS.map((l) => (
-                <option key={l.value} value={l.value}>{l.label}</option>
+              {LANGUAGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {languageLabelMap[option.value]}
+                </option>
               ))}
             </select>
           </div>
