@@ -21,6 +21,7 @@
 
 - Node.js 18+
 - npm hoặc bun
+- Docker Desktop (nếu chạy bằng Docker)
 
 ---
 
@@ -80,7 +81,7 @@ AUTH_SECRET=<kết quả ở trên>
    ```
 5. Chạy migration:
    ```bash
-   npx drizzle-kit migrate
+   npm run db:migrate
    ```
 
 ---
@@ -289,6 +290,37 @@ Mở [http://localhost:3000](http://localhost:3000) — đăng nhập bằng Git
 
 ---
 
+## Chạy bằng Docker (không cần cài Node/Bun)
+
+```bash
+# 1) Clone source
+git clone https://github.com/fuongzz/CanvarMini
+cd CanvarMini/canva-clone
+
+# 2) Tạo file môi trường
+cp .env.example .env.local
+# Sau đó điền đầy đủ biến môi trường vào .env.local
+
+# 3) Build và chạy container
+docker compose up -d --build
+```
+
+Sau khi container chạy xong, mở [http://localhost:3000](http://localhost:3000).
+
+Chạy migrate database (khi cần):
+
+```bash
+docker compose exec app npm run db:migrate
+```
+
+Dừng container:
+
+```bash
+docker compose down
+```
+
+---
+
 ## Lưu ý quan trọng
 
 - **OAuth callback URL phải khớp với port đang chạy.** Mặc định là `3000`. Nếu port bị chiếm và app chạy ở `3001`, login sẽ thất bại — hãy tắt process khác đang dùng port 3000 rồi chạy lại.
@@ -318,3 +350,44 @@ Mở [http://localhost:3000](http://localhost:3000) — đăng nhập bằng Git
 | Tailwind CSS | Styling |
 | shadcn/ui | UI components |
 | Nodemailer | SMTP email (OTP) |
+
+---
+
+## TL;DR
+1. Cài sẵn 2 thứ: Git + Docker Desktop (bật Docker Engine)
+2. Clone repo và vào thư mục dự án
+```bash
+git clone https://github.com/fuongzz/CanvarMini
+cd CanvarMini/canva-clone
+```
+3. Tạo file môi trường:
+Copy từ mẫu: .env.example thành .env.local
+Điền đầy đủ biến bắt buộc:
+```bash
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+AUTH_SECRET
+AUTH_GITHUB_ID, AUTH_GITHUB_SECRET
+AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET
+DATABASE_URL
+GEMINI_API_KEY
+UPLOADTHING_SECRET, UPLOADTHING_APP_ID
+SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
+(tùy chọn) UNSPLASH, REPLICATE, STRIPE
+```
+4. Build và chạy web bằng Docker
+```bash
+docker compose up -d --build
+```
+Chạy migrate database (làm 1 lần hoặc khi đổi schema)
+```bash
+docker compose exec app npm run db:migrate
+```
+Mở web
+```bash
+http://localhost:3000
+```
+Dừng hệ thống khi không dùng
+```bash
+docker compose down
+```
+Lưu ý: Không cần cài Node/Bun trên máy mới nếu chạy theo cách Docker.
