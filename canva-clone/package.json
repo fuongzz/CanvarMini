@@ -39,6 +39,7 @@
     "hono": "^4.4.12",
     "jsdom": "^24.1.0",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.399.0",
     "material-colors": "^1.2.6",

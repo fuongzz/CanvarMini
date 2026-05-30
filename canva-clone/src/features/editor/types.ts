@@ -111,7 +111,8 @@ export type ActiveTool =
   | "ai"
   | "remove-bg"
   | "templates"
-  | "chat";
+  | "chat"
+  | "generate-slides";
 
 export const FILL_COLOR = "rgba(0,0,0,1)";
 export const STROKE_COLOR = "rgba(0,0,0,1)";

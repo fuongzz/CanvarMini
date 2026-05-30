@@ -55,6 +55,7 @@ import { RemoveBgSidebar } from "@/features/editor/components/remove-bg-sidebar"
 import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
 import { ChatSidebar } from "@/features/editor/components/chat-sidebar";
 import { FolderSidebar } from "@/features/editor/components/folder-sidebar";
+import { GenerateSlidesSidebar } from "@/features/editor/components/generate-slides-sidebar";
 import { isTextType } from "@/features/editor/utils";
 
 type CanvasContextMenuState = {
@@ -1059,6 +1060,35 @@ export const Editor = ({ initialData }: EditorProps) => {
     persistProject(withCurrentSaved, currentIndex);
   }, [captureCurrentSlide, debouncedPersist, persistProject]);
 
+  const onApplyGeneratedSlides = useCallback((generatedSlides: { id: string; title: string; json: string; width: number; height: number }[]) => {
+    if (!editor || generatedSlides.length === 0) return;
+
+    const withCurrentSaved = captureCurrentSlide(slidesRef.current);
+
+    const newSlides = generatedSlides.map((gs) => ({
+      id: createSlideId(),
+      json: gs.json,
+      width: gs.width,
+      height: gs.height,
+    }));
+
+    const nextSlides = [...withCurrentSaved, ...newSlides];
+    const nextIndex = withCurrentSaved.length; // Go to first new slide
+
+    slidesRef.current = nextSlides;
+    setSlides(nextSlides);
+    activeSlideIndexRef.current = nextIndex;
+    setActiveSlideIndex(nextIndex);
+
+    const firstNew = newSlides[0];
+    if (firstNew) {
+      editor.loadJson(firstNew.json);
+      editor.changeSize({ width: firstNew.width, height: firstNew.height });
+    }
+
+    debouncedPersist(nextSlides, nextIndex);
+  }, [captureCurrentSlide, debouncedPersist, editor]);
+
   const activeSlide = slides[activeSlideIndex] ?? slides[0];
   const contextObject = editor?.canvas.getActiveObject() as fabric.Object | undefined;
   const contextObjectIsText = Boolean(contextObject && isTextType(contextObject.type));
@@ -1192,6 +1222,12 @@ export const Editor = ({ initialData }: EditorProps) => {
           editor={editor}
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
+        />
+        <GenerateSlidesSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+          onApplyGeneratedSlides={onApplyGeneratedSlides}
         />
         <main className="bg-muted flex-1 overflow-auto relative flex flex-col">
           <Toolbar

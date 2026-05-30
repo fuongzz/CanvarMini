@@ -94,7 +94,7 @@ export const TemplateSidebar = ({
       height: template.height,
       json: template.json,
       thumbnailUrl: template.thumbnailUrl || "",
-      isPro: template.isPro,
+      isPro: Boolean(template.isPro),
     }));
 
     return [...demoTemplates, ...remoteTemplates];

@@ -5,6 +5,7 @@ import {
   Folder,
   ImageIcon,
   LayoutTemplate,
+  Presentation,
   Settings,
   Sparkles,
   Wrench,
@@ -245,6 +246,12 @@ export const Sidebar = ({ activeTool, onChangeActiveTool }: SidebarProps) => {
           label="AI"
           isActive={activeTool === "ai"}
           onClick={() => onChangeActiveTool("ai")}
+        />
+        <SidebarItem
+          icon={Presentation}
+          label="AI Slides"
+          isActive={activeTool === "generate-slides"}
+          onClick={() => onChangeActiveTool("generate-slides")}
         />
         <SidebarItem
           icon={Settings}
