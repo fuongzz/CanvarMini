@@ -213,31 +213,56 @@ const app = new Hono()
       const seed = Math.floor(Math.random() * 1000000);
       const encoded = encodeURIComponent(prompt);
 
-      const urls = [
-        `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${seed}&model=flux`,
-        `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${seed + 1}&model=turbo`,
-      ];
-
-      for (const imageUrl of urls) {
+      // Fetch an image URL server-side and return it as a base64 data URL so the
+      // canvas (fabric) can load it without running into CORS restrictions.
+      const fetchAsDataUrl = async (imageUrl: string, headers?: Record<string, string>) => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 25000);
-
-          const res = await fetch(imageUrl, { signal: controller.signal });
-          clearTimeout(timeout);
-
-          if (!res.ok) continue;
-
+          const res = await fetch(imageUrl, { signal: controller.signal, headers });
+          if (!res.ok) return null;
           const contentType = res.headers.get("content-type") || "";
-          if (!contentType.startsWith("image/")) continue;
-
+          if (!contentType.startsWith("image/")) return null;
           const buffer = await res.arrayBuffer();
           const base64 = Buffer.from(buffer).toString("base64");
-          const dataUrl = `data:${contentType};base64,${base64}`;
-
-          return c.json({ data: dataUrl });
+          return `data:${contentType};base64,${base64}`;
         } catch {
-          continue;
+          return null;
+        } finally {
+          clearTimeout(timeout);
+        }
+      };
+
+      // 1) Try Pollinations (free text-to-image). Note: anonymous usage is now
+      //    heavily rate-limited (HTTP 402 / x402), so this may fail.
+      const pollinationsUrls = [
+        `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${seed}`,
+        `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${seed + 1}&model=sana`,
+      ];
+      for (const imageUrl of pollinationsUrls) {
+        const dataUrl = await fetchAsDataUrl(imageUrl);
+        if (dataUrl) return c.json({ data: dataUrl });
+      }
+
+      // 2) Fallback: fetch a relevant real photo from Unsplash using the prompt
+      //    as a search query (reliable, uses the existing access key).
+      const unsplashKey = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY;
+      if (unsplashKey) {
+        try {
+          const searchUrl = `https://api.unsplash.com/search/photos?query=${encoded}&per_page=1&orientation=landscape&client_id=${unsplashKey}`;
+          const searchRes = await fetch(searchUrl);
+          if (searchRes.ok) {
+            const data = (await searchRes.json()) as {
+              results?: { urls?: { regular?: string; full?: string } }[];
+            };
+            const photoUrl = data.results?.[0]?.urls?.regular || data.results?.[0]?.urls?.full;
+            if (photoUrl) {
+              const dataUrl = await fetchAsDataUrl(photoUrl);
+              if (dataUrl) return c.json({ data: dataUrl });
+            }
+          }
+        } catch {
+          // ignore and fall through to error
         }
       }
 
